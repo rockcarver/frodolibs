@@ -17,6 +17,7 @@ const scriptURLTemplate string = "%s/json%s/scripts/%s"
 const emailTemplateURLTemplate string = "%s/openidm/config/emailTemplate/%s"
 const queryAllTreesURLTemplate string = "%s/json%s/realm-config/authentication/authenticationtrees/trees?_queryFilter=true"
 
+
 var containerNodes = map[string]bool{
     "PageNode": true,
     "CustomPageNode": true,
@@ -33,19 +34,18 @@ var emailTemplateNodes = map[string]bool{
     "EmailTemplateNode": true,
 }
 
-func GetNodeData(tenant string, tokenId string, realm string, id string, nodeType string) ([]byte, error) {
+func GetNodeData(frt FRToken, id string, nodeType string) ([]byte, error) {
 	var b []byte
 
-	cookieName, _ := GetCookieName(tenant)
 	// log.Printf("Cookie name: %s\n", cookieName)
 	client := resty.New()
 	// client.SetDebug(true)
-	jURL := fmt.Sprintf(nodeURLTemplate, tenant, GetRealmUrl(realm), nodeType, id)
+	jURL := fmt.Sprintf(nodeURLTemplate, frt.tenant, GetRealmUrl(frt.realm), nodeType, id)
 	// log.Printf("url: %s\n", jURL)
 	resp1, err1 := client.R().
 		SetHeader("Accept-API-Version", amApiVersion).
 		SetHeader("X-Requested-With", "XmlHttpRequest").
-		SetCookie(&http.Cookie{Name: cookieName, Value: tokenId,}).
+		SetCookie(&http.Cookie{Name: frt.cookieName, Value: frt.tokenId,}).
 		Get(jURL)
 	// log.Printf("resp1: %s\n", resp1)
 	if err1 == nil {
@@ -65,18 +65,17 @@ func GetNodeData(tenant string, tokenId string, realm string, id string, nodeTyp
 	}
 }
 
-func GetTreeData(tenant string, tokenId string, realm string, name string) ([]byte, error) {
+func GetTreeData(frt FRToken, name string) ([]byte, error) {
 	var b []byte
 	client := resty.New()
 	// client.SetDebug(true)
-	jURL := fmt.Sprintf(journeyURLTemplate, tenant, GetRealmUrl(realm), name)
+	jURL := fmt.Sprintf(journeyURLTemplate, frt.tenant, GetRealmUrl(frt.realm), name)
 	// log.Printf("url: %s\n", jURL)
-	cookieName, _ := GetCookieName(tenant)
 	// read tree object
 	resp, err := client.R().
 		SetHeader("Accept-API-Version", amApiVersion).
 		SetHeader("X-Requested-With", "XmlHttpRequest").
-		SetCookie(&http.Cookie{Name: cookieName, Value: tokenId,}).
+		SetCookie(&http.Cookie{Name: frt.cookieName, Value: frt.tokenId,}).
 		Get(jURL)
 	// log.Printf("resp1: %s\n", resp1.Body())
 	if err == nil {
@@ -90,20 +89,17 @@ func GetTreeData(tenant string, tokenId string, realm string, name string) ([]by
 	}
 }
 
-func GetScriptData(tenant string, tokenId string, realm string, id string) ([]byte, error) {
+func GetScriptData(frt FRToken, id string) ([]byte, error) {
 	var b []byte
-
-	cookieName, _ := GetCookieName(tenant)
-	// log.Printf("Cookie name: %s\n", cookieName)
 
 	client := resty.New()
 	// client.SetDebug(true)
-	jURL := fmt.Sprintf(scriptURLTemplate, tenant, GetRealmUrl(realm), id)
+	jURL := fmt.Sprintf(scriptURLTemplate, frt.tenant, GetRealmUrl(frt.realm), id)
 	// log.Printf("url: %s\n", jURL)
 	resp1, err1 := client.R().
 		SetHeader("Accept-API-Version", amApiVersion).
 		SetHeader("X-Requested-With", "XmlHttpRequest").
-		SetCookie(&http.Cookie{Name: cookieName, Value: tokenId,}).
+		SetCookie(&http.Cookie{Name: frt.cookieName, Value: frt.tokenId,}).
 		Get(jURL)
 	// log.Printf("resp1: %s\n", resp1)
 	if err1 == nil {
@@ -123,7 +119,7 @@ func GetScriptData(tenant string, tokenId string, realm string, id string) ([]by
 	}
 }
 
-func GetScriptDataAsMap(tenant string, tokenId string, realm string, data []byte) (map[string](interface{}), string, error) {
+func GetScriptDataAsMap(frt FRToken, data []byte) (map[string](interface{}), string, error) {
 	scriptDataMap := make(map[string](interface{}))
 	scriptedNodeMap := make(map[string](interface{}))
 	err1 := json.Unmarshal([]byte(data), &scriptedNodeMap)
@@ -134,7 +130,7 @@ func GetScriptDataAsMap(tenant string, tokenId string, realm string, data []byte
 	// log.Printf("script id: %s\n", scriptId)
 
 	// get the script
-	scriptData, _ := GetScriptData(tenant, tokenId, realm, scriptId)
+	scriptData, _ := GetScriptData(frt, scriptId)
 	_ = scriptData
 	// log.Printf("script data: %s\n", scriptData)
 
@@ -147,15 +143,15 @@ func GetScriptDataAsMap(tenant string, tokenId string, realm string, data []byte
 	return scriptDataMap, scriptId, nil
 }
 
-func GetEmailTemplateData(tenant string, bearerToken string, id string) ([]byte, error) {
+func GetEmailTemplateData(frt FRToken, id string) ([]byte, error) {
 	var b []byte
 
 	client := resty.New()
 	// client.SetDebug(true)
-	jURL := fmt.Sprintf(emailTemplateURLTemplate, GetTenantURL(tenant), id)
+	jURL := fmt.Sprintf(emailTemplateURLTemplate, GetTenantURL(frt.tenant), id)
 	// log.Printf("url: %s\n", jURL)
 	resp1, err1 := client.R().
-		SetHeader("Authorization", fmt.Sprintf("Bearer %s", bearerToken)).
+		SetHeader("Authorization", fmt.Sprintf("Bearer %s", frt.bearerToken)).
 		Get(jURL)
 	// log.Printf("resp1: %s\n", resp1)
 	if err1 == nil {
@@ -175,7 +171,7 @@ func GetEmailTemplateData(tenant string, bearerToken string, id string) ([]byte,
 	}
 }
 
-func GetEmailTemplateDataAsMap(tenant string, bearerToken string, data []byte) (map[string](interface{}), string, error) {
+func GetEmailTemplateDataAsMap(frt FRToken, data []byte) (map[string](interface{}), string, error) {
 	emailTemplateDataMap := make(map[string](interface{}))
 	emailTemplateNodeMap := make(map[string](interface{}))
 	err1 := json.Unmarshal([]byte(data), &emailTemplateNodeMap)
@@ -184,7 +180,7 @@ func GetEmailTemplateDataAsMap(tenant string, bearerToken string, data []byte) (
 	}
 	templateId := emailTemplateNodeMap["emailTemplateName"].(string)
 	// log.Printf("template id: %s\n", templateId)
-	templateData, _ := GetEmailTemplateData(tenant, bearerToken, templateId)
+	templateData, _ := GetEmailTemplateData(frt, templateId)
 	// log.Printf("template data: %s\n", templateData)
 	err := json.Unmarshal([]byte(templateData), &emailTemplateDataMap)
 	// log.Printf("journeyMap: %q\n", journeyMap)
@@ -201,7 +197,7 @@ func GetOrigin(tenant string, realm string) string {
 	return hex.EncodeToString(hash[:])
 }
 
-func GetJourneyData(tenant string, tokenId string, bearerToken string, realm string, journey string, deploymentType string) (map[string]interface{}, error) {
+func GetJourneyData(frt FRToken, journey string) (map[string]interface{}, error) {
 	// var b []byte
 	var journeyMap = make(map[string](interface{}))
 	var treeMap = make(map[string](interface{}))
@@ -209,10 +205,10 @@ func GetJourneyData(tenant string, tokenId string, bearerToken string, realm str
 	var scriptsMap = make(map[string](interface{}))
 	var emailTemplatesMap = make(map[string](interface{}))
 
-	journeyMap["origin"] = GetOrigin(tenant, realm)
+	journeyMap["origin"] = GetOrigin(frt.tenant, frt.realm)
 
 	// read tree object
-	treeData, err1 := GetTreeData(tenant, tokenId, realm, journey)
+	treeData, err1 := GetTreeData(frt, journey)
 	if err1 == nil {
 		// exports := []byte(`{"origin":"$ORIGIN", "innernodes":{}, "nodes":{}, "scripts":{}, "emailTemplates":{}}`)
 
@@ -230,7 +226,7 @@ func GetJourneyData(tenant string, tokenId string, bearerToken string, realm str
 			// log.Printf("key: %s, type: %s\n", nodeId, nodeInfo["nodeType"])
 
 			// get data for node
-			nodeData, _ := GetNodeData(tenant, tokenId, realm, nodeId, nodeInfo["nodeType"].(string))
+			nodeData, _ := GetNodeData(frt, nodeId, nodeInfo["nodeType"].(string))
 			nodeMap := make(map[string](interface{}))
 			err := json.Unmarshal([]byte(nodeData), &nodeMap)
 			// log.Printf("journeyMap: %q\n", journeyMap)
@@ -243,15 +239,15 @@ func GetJourneyData(tenant string, tokenId string, bearerToken string, realm str
 			// if node is scripted node, get the script too
 			_, scriptedType := scriptedNodes[nodeInfo["nodeType"].(string)]
 			if scriptedType {
-				out, id, _ := GetScriptDataAsMap(tenant, tokenId, realm, nodeData)
+				out, id, _ := GetScriptDataAsMap(frt, nodeData)
 				scriptsMap[id] = out
 			}
 
 			// if the node is email template, get the template
-			if deploymentType == "Cloud" || deploymentType == "ForgeOps" {
+			if frt.deploymentType == "Cloud" || frt.deploymentType == "ForgeOps" {
 				_, emailTemplateType := emailTemplateNodes[nodeInfo["nodeType"].(string)]
 				if emailTemplateType {
-					out, id, _ := GetEmailTemplateDataAsMap(tenant, bearerToken, nodeData)
+					out, id, _ := GetEmailTemplateDataAsMap(frt, nodeData)
 					emailTemplatesMap[id] = out
 				}
 			}
@@ -273,7 +269,7 @@ func GetJourneyData(tenant string, tokenId string, bearerToken string, realm str
 					nodesInPageMap := nodesInPage[index].(map[string]interface{})
 					nodeIdInPage := nodesInPageMap["_id"].(string)
 					nodeTypeInPage := nodesInPageMap["nodeType"].(string)
-					inPageNodeData, _ := GetNodeData(tenant, tokenId, realm, nodeIdInPage, nodeTypeInPage)
+					inPageNodeData, _ := GetNodeData(frt, nodeIdInPage, nodeTypeInPage)
 					// log.Printf("inPageNodeData: %s\n", inPageNodeData)
 
 					inPageNodeMap := make(map[string](interface{}))
@@ -288,14 +284,14 @@ func GetJourneyData(tenant string, tokenId string, bearerToken string, realm str
 					// handle scripted nodes in page node
 					_, scriptedPageNdeType := scriptedNodes[nodeTypeInPage]
 					if scriptedPageNdeType {
-						out, id, _ := GetScriptDataAsMap(tenant, tokenId, realm, inPageNodeData)
+						out, id, _ := GetScriptDataAsMap(frt, inPageNodeData)
 						scriptsMap[id] = out
 					}
 
-					if deploymentType == "Cloud" || deploymentType == "ForgeOps" {
+					if frt.deploymentType == "Cloud" || frt.deploymentType == "ForgeOps" {
 						_, emailTemplatePageNodeType := emailTemplateNodes[nodeTypeInPage]
 						if emailTemplatePageNodeType {
-							out, id, _ := GetEmailTemplateDataAsMap(tenant, bearerToken, inPageNodeData)
+							out, id, _ := GetEmailTemplateDataAsMap(frt, inPageNodeData)
 							emailTemplatesMap[id] = out
 
 						}
@@ -316,12 +312,12 @@ func GetJourneyData(tenant string, tokenId string, bearerToken string, realm str
 	}
 }
 
-func IsCustom(tenant string, tokenId string, realm string, versionString string, treeMap map[string](interface{})) bool {
+func IsCustom(frt FRToken, treeMap map[string](interface{})) bool {
 	nodeList := treeMap["nodes"].(map[string]interface{})
 	var ootbNodeTypes map[string]bool
-	// log.Println(versionString)
-	switch versionString {
-		case "7.1.0":
+	// fmt.Println(frt.version)
+	switch frt.version {
+		case "7.1.0", "7.2.0":
 			ootbNodeTypes = ootbnodetypes_7_1
 		case "7.0.0", "7.0.1", "7.0.2":
 			ootbNodeTypes = ootbnodetypes_7
@@ -336,14 +332,14 @@ func IsCustom(tenant string, tokenId string, realm string, versionString string,
 	// log.Printf("ootbNodeTypes: %q\n", ootbNodeTypes)
 	for nodeId := range nodeList {
 		nodeInfo := nodeList[nodeId].(map[string]interface{})
-		// log.Printf("nodeInfo: %s and %b\n", nodeInfo, ootbNodeTypes[nodeInfo["nodeType"].(string)])
+		// fmt.Printf("nodeInfo: %s and %b\n", nodeInfo, ootbNodeTypes[nodeInfo["nodeType"].(string)])
 		_, ootbnode := ootbNodeTypes[nodeInfo["nodeType"].(string)]
 		if !ootbnode {
 			return true
 		}
 		_, containerNodeType := containerNodes[nodeInfo["nodeType"].(string)]
 		if containerNodeType {
-			nodeData, _ := GetNodeData(tenant, tokenId, realm, nodeId, nodeInfo["nodeType"].(string))
+			nodeData, _ := GetNodeData(frt, nodeId, nodeInfo["nodeType"].(string))
 			pageNodeMap := make(map[string](interface{}))
 			err := json.Unmarshal([]byte(nodeData), &pageNodeMap)
 			if err != nil {
@@ -363,18 +359,17 @@ func IsCustom(tenant string, tokenId string, realm string, versionString string,
 	return false
 }
 
-func ListJourneys(tenant string, tokenId string, realm string, versionString string) (map[string]bool, error) {
+func ListJourneys(frt FRToken) (map[string]bool, error) {
 
-	cookieName, _ := GetCookieName(tenant)
 	// log.Printf("Cookie name: %s\n", cookieName)
 	client := resty.New()
 	// client.SetDebug(true)
-	jURL := fmt.Sprintf(queryAllTreesURLTemplate, tenant, GetRealmUrl(realm))
-	// log.Printf("url: %s\n", jURL)
+	jURL := fmt.Sprintf(queryAllTreesURLTemplate, frt.tenant, GetRealmUrl(frt.realm))
+	// fmt.Printf("url: %s\n", jURL)
 	resp1, err1 := client.R().
 		SetHeader("Accept-API-Version", amApiVersion).
 		SetHeader("X-Requested-With", "XmlHttpRequest").
-		SetCookie(&http.Cookie{Name: cookieName, Value: tokenId,}).
+		SetCookie(&http.Cookie{Name: frt.cookieName, Value: frt.tokenId,}).
 		Get(jURL)
 
 	if err1 == nil {
@@ -391,7 +386,8 @@ func ListJourneys(tenant string, tokenId string, realm string, versionString str
 			for index, _ := range results {
 				resultMap := results[index].(map[string]interface{})
 				customTree := false
-				if IsCustom(tenant, tokenId, realm, versionString, resultMap) {
+				// fmt.Printf("%s, %s, %s, %s, %s, %s\n", frt.tenant, frt.realm, frt.cookieName, frt.tokenId, frt.bearerToken, frt.version)
+				if IsCustom(frt, resultMap) {
 					customTree = true
 				}
 				list[resultMap["_id"].(string)] = customTree

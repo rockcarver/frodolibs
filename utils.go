@@ -2,7 +2,10 @@ package frodolibs
 
 import (
     "fmt"
+	"errors"
+	"strings"
 	"net/url"
+	"encoding/json"
 )
 
 var ootbnodetypes_7 = map[string]bool{
@@ -304,12 +307,19 @@ var ootbnodetypes_7_1 = map[string]bool{
 const amApiVersion string = "resource=1.0"
 const idmAdminScope string = "fr:idm:*"
 const apiVersion string = "resource=2.0, protocol=1.0"
+const realmPathTemplate string = "/realms/%s"
+
 
 func GetRealmUrl(realm string) string {
+	if strings.HasPrefix(realm, "/") && len(realm) > 1 {
+		realm = realm[1:len(realm)]
+	}
 	realmPath := fmt.Sprintf(realmPathTemplate, "root")
+	// fmt.Printf("realm: %s\n", realm)
 	if realm != "/" {
 		realmPath = realmPath + fmt.Sprintf(realmPathTemplate, realm)
 	}
+	// fmt.Printf("realmpath: %s\n", realmPath)
 	return realmPath
 	// authURL := fmt.Sprintf("%s/json%s/authenticate", tenant, realmPath)
 }
@@ -330,4 +340,18 @@ func GetCompleteRedirectURL(tenant string, uri string) string {
 	}
 	url := fmt.Sprintf("%s://%s%s", u.Scheme, u.Host, uri)
 	return url
+}
+
+func ExtractTokenFromResponse(payload []byte, tokenName string) (string, error) {
+	jsonMap := make(map[string](interface{}))
+	err := json.Unmarshal([]byte(payload), &jsonMap)
+	if err != nil {
+		return "", errors.New(fmt.Sprintf("ERROR: fail to unmarshal json, %s", err.Error()))
+	}
+	tokenValue, err2 := jsonMap[tokenName].(string)
+	if err2 {
+		return tokenValue, nil
+	} else {
+		return "", errors.New(fmt.Sprintf("ERROR: no %s found in response", tokenName))
+	}
 }

@@ -8,13 +8,13 @@ import (
 
 const idmConfigEntityURLTemplate string = "%s/openidm/config/%s"
 
-func ExportConfigEntity(tenant string, bearerToken string, entityName string) ([]byte, error) {
+func ExportConfigEntity(frt FRToken, entityName string) ([]byte, error) {
 	var b []byte
 	client := resty.New()
 	// client.SetDebug(true)
 	resp1, err1 := client.R().
-		SetHeader("Authorization", fmt.Sprintf("Bearer %s", bearerToken)).
-		Get(fmt.Sprintf(idmConfigEntityURLTemplate, GetTenantURL(tenant), entityName))
+		SetHeader("Authorization", fmt.Sprintf("Bearer %s", frt.bearerToken)).
+		Get(fmt.Sprintf(idmConfigEntityURLTemplate, GetTenantURL(frt.tenant), entityName))
 	if err1 == nil {
 		if resp1.StatusCode() < 200 || resp1.StatusCode() > 399 {
 			return b, errors.New(fmt.Sprintf("ERROR: export entity call returned %d", resp1.StatusCode()))

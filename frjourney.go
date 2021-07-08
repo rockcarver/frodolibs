@@ -11,7 +11,6 @@ import (
 	"net/http"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/tidwall/gjson"
 )
 
 const journeyURLTemplate string = "%s/json%s/realm-config/authentication/authenticationtrees/trees/%s"
@@ -330,8 +329,6 @@ func IsCustom(frt FRToken, treeMap map[string](interface{})) bool {
 	default:
 		return true
 	}
-
-	result := gjson.Get(ootbnodetypes, "#(nets.#(=="fb"))")
 
 	// log.Printf("ootbNodeTypes: %q\n", ootbNodeTypes)
 	for nodeId := range nodeList {

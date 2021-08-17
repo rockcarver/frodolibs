@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	// "log"
 	"net/http"
+
 	"github.com/go-resty/resty/v2"
 )
 
@@ -17,21 +19,20 @@ const scriptURLTemplate string = "%s/json%s/scripts/%s"
 const emailTemplateURLTemplate string = "%s/openidm/config/emailTemplate/%s"
 const queryAllTreesURLTemplate string = "%s/json%s/realm-config/authentication/authenticationtrees/trees?_queryFilter=true"
 
-
 var containerNodes = map[string]bool{
-    "PageNode": true,
-    "CustomPageNode": true,
+	"PageNode":       true,
+	"CustomPageNode": true,
 }
 
 var scriptedNodes = map[string]bool{
-    "ScriptedDecisionNode": true,
-    "ClientScriptNode": true,
-	"CustomScriptNode": true,
+	"ScriptedDecisionNode": true,
+	"ClientScriptNode":     true,
+	"CustomScriptNode":     true,
 }
 
 var emailTemplateNodes = map[string]bool{
-    "EmailSuspendNode": true,
-    "EmailTemplateNode": true,
+	"EmailSuspendNode":  true,
+	"EmailTemplateNode": true,
 }
 
 func GetNodeData(frt FRToken, id string, nodeType string) ([]byte, error) {
@@ -45,7 +46,7 @@ func GetNodeData(frt FRToken, id string, nodeType string) ([]byte, error) {
 	resp1, err1 := client.R().
 		SetHeader("Accept-API-Version", amApiVersion).
 		SetHeader("X-Requested-With", "XmlHttpRequest").
-		SetCookie(&http.Cookie{Name: frt.cookieName, Value: frt.tokenId,}).
+		SetCookie(&http.Cookie{Name: frt.cookieName, Value: frt.tokenId}).
 		Get(jURL)
 	// log.Printf("resp1: %s\n", resp1)
 	if err1 == nil {
@@ -75,7 +76,7 @@ func GetTreeData(frt FRToken, name string) ([]byte, error) {
 	resp, err := client.R().
 		SetHeader("Accept-API-Version", amApiVersion).
 		SetHeader("X-Requested-With", "XmlHttpRequest").
-		SetCookie(&http.Cookie{Name: frt.cookieName, Value: frt.tokenId,}).
+		SetCookie(&http.Cookie{Name: frt.cookieName, Value: frt.tokenId}).
 		Get(jURL)
 	// log.Printf("resp1: %s\n", resp1.Body())
 	if err == nil {
@@ -99,7 +100,7 @@ func GetScriptData(frt FRToken, id string) ([]byte, error) {
 	resp1, err1 := client.R().
 		SetHeader("Accept-API-Version", amApiVersion).
 		SetHeader("X-Requested-With", "XmlHttpRequest").
-		SetCookie(&http.Cookie{Name: frt.cookieName, Value: frt.tokenId,}).
+		SetCookie(&http.Cookie{Name: frt.cookieName, Value: frt.tokenId}).
 		Get(jURL)
 	// log.Printf("resp1: %s\n", resp1)
 	if err1 == nil {
@@ -317,16 +318,16 @@ func IsCustom(frt FRToken, treeMap map[string](interface{})) bool {
 	var ootbNodeTypes map[string]bool
 	// fmt.Println(frt.version)
 	switch frt.version {
-		case "7.1.0", "7.2.0":
-			ootbNodeTypes = ootbnodetypes_7_1
-		case "7.0.0", "7.0.1", "7.0.2":
-			ootbNodeTypes = ootbnodetypes_7
-		case "6.5.3","6.5.2.3","6.5.2.2","6.5.2.1","6.5.2","6.5.1","6.5.0.2","6.5.0.1":
-			ootbNodeTypes = ootbnodetypes_6_5
-		case "6.0.0.7","6.0.0.6","6.0.0.5","6.0.0.4","6.0.0.3","6.0.0.2","6.0.0.1","6.0.0":
-			ootbNodeTypes = ootbnodetypes_6
-		default:
-			return true
+	case "7.1.0", "7.2.0":
+		ootbNodeTypes = ootbnodetypes_7_1
+	case "7.0.0", "7.0.1", "7.0.2":
+		ootbNodeTypes = ootbnodetypes_7
+	case "6.5.3", "6.5.2.3", "6.5.2.2", "6.5.2.1", "6.5.2", "6.5.1", "6.5.0.2", "6.5.0.1":
+		ootbNodeTypes = ootbnodetypes_6_5
+	case "6.0.0.7", "6.0.0.6", "6.0.0.5", "6.0.0.4", "6.0.0.3", "6.0.0.2", "6.0.0.1", "6.0.0":
+		ootbNodeTypes = ootbnodetypes_6
+	default:
+		return true
 	}
 
 	// log.Printf("ootbNodeTypes: %q\n", ootbNodeTypes)
@@ -369,7 +370,7 @@ func ListJourneys(frt FRToken) (map[string]bool, error) {
 	resp1, err1 := client.R().
 		SetHeader("Accept-API-Version", amApiVersion).
 		SetHeader("X-Requested-With", "XmlHttpRequest").
-		SetCookie(&http.Cookie{Name: frt.cookieName, Value: frt.tokenId,}).
+		SetCookie(&http.Cookie{Name: frt.cookieName, Value: frt.tokenId}).
 		Get(jURL)
 
 	if err1 == nil {

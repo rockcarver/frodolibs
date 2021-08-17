@@ -1,18 +1,18 @@
 package frodolibs
 
 import (
-    "fmt"
-	"errors"
-	"strings"
-	"net/http"
-	"log"
-	"regexp"
-    "net/url"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"log"
+	"net/http"
+	"net/url"
+	"regexp"
+	"strings"
+
 	"github.com/go-resty/resty/v2"
 	cv "github.com/jimlambrt/go-oauth-pkce-code-verifier"
 )
-
 
 const adminClientPassword string = "doesnotmatter"
 const serverInfoURLTemplate string = "%s/json/serverinfo/%s"
@@ -24,18 +24,19 @@ const oauthClientURLTemplate string = "%s/json%s/realm-config/agents/OAuth2Clien
 var verbose bool = true
 var authCode = ""
 var versionString string
+
 // var deploymentType string
 
 var adminClientId string = "idmAdminClient"
 
 type FRToken struct {
-	tenant string
-	realm string
-	cookieName string
-	tokenId string
-	bearerToken string
+	tenant         string
+	realm          string
+	cookieName     string
+	tokenId        string
+	bearerToken    string
 	deploymentType string
-	version string
+	version        string
 }
 
 func NewFRToken(tenant string, realm string) FRToken {
@@ -63,21 +64,21 @@ func (frt *FRToken) GetVersion() string {
 
 func (frt *FRToken) DetermineDeployment() error {
 	// cookieName, _ := GetCookieName(frt.tenant)
-	fidcClientId := "RCSClient"
+	fidcClientId := "idmAdminClient"
 	forgeopsClientId := "idm-admin-ui"
 
 	// try to get fidcClientId first
 	client := resty.New()
 	resp1, err1 := client.R().
 		SetHeader("Accept-API-Version", amApiVersion).
-		SetCookie(&http.Cookie{Name: frt.cookieName, Value: frt.tokenId,}).
+		SetCookie(&http.Cookie{Name: frt.cookieName, Value: frt.tokenId}).
 		Get(fmt.Sprintf(oauthClientURLTemplate, frt.tenant, "/alpha", fidcClientId))
 	if resp1.StatusCode() < 200 || resp1.StatusCode() > 399 {
 		if resp1.StatusCode() == 404 {
 			// not found - try for forgeopsClientId
 			resp2, err2 := client.R().
 				SetHeader("Accept-API-Version", amApiVersion).
-				SetCookie(&http.Cookie{Name: frt.cookieName, Value: frt.tokenId,}).
+				SetCookie(&http.Cookie{Name: frt.cookieName, Value: frt.tokenId}).
 				Get(fmt.Sprintf(oauthClientURLTemplate, frt.tenant, "", forgeopsClientId))
 			if resp2.StatusCode() < 200 || resp2.StatusCode() > 399 {
 				if resp2.StatusCode() == 404 {
@@ -117,7 +118,7 @@ func (frt *FRToken) GetVersionInfo() error {
 	client := resty.New()
 	resp1, err1 := client.R().
 		SetHeader("Accept-API-Version", amApiVersion).
-		SetCookie(&http.Cookie{Name: frt.cookieName, Value: frt.tokenId,}).
+		SetCookie(&http.Cookie{Name: frt.cookieName, Value: frt.tokenId}).
 		Get(fmt.Sprintf(serverInfoURLTemplate, frt.tenant, "version"))
 
 	if err1 == nil {
@@ -209,9 +210,9 @@ func (frt *FRToken) GetAccessToken() error {
 		resp1, err1 = client.R().
 			SetHeader("Content-Type", "application/x-www-form-urlencoded").
 			SetFormData(map[string]string{
-				"redirect_uri": redirectURL,
-				"grant_type": "authorization_code",
-				"code": authCode,
+				"redirect_uri":  redirectURL,
+				"grant_type":    "authorization_code",
+				"code":          authCode,
 				"code_verifier": codeVerifier,
 			}).
 			Post(accessTokenURL)
@@ -219,10 +220,10 @@ func (frt *FRToken) GetAccessToken() error {
 		resp1, err1 = client.R().
 			SetHeader("Content-Type", "application/x-www-form-urlencoded").
 			SetFormData(map[string]string{
-				"client_id": adminClientId,
-				"redirect_uri": redirectURL,
-				"grant_type": "authorization_code",
-				"code": authCode,
+				"client_id":     adminClientId,
+				"redirect_uri":  redirectURL,
+				"grant_type":    "authorization_code",
+				"code":          authCode,
 				"code_verifier": codeVerifier,
 			}).
 			Post(accessTokenURL)
@@ -252,17 +253,17 @@ func (frt *FRToken) GetAuthCode(authorizeURL string, redirectURL string, codeCha
 	resp1, err1 := client.R().
 		SetHeader("Content-Type", "application/x-www-form-urlencoded").
 		SetFormData(map[string]string{
-			"redirect_uri": redirectURL,
-			"scope": idmAdminScope,
-			"response_type": "code",
-			"client_id": adminClientId,
-			"csrf": frt.tokenId,
-			"decision": "allow",
-			"code_challenge": codeChallenge,
+			"redirect_uri":          redirectURL,
+			"scope":                 idmAdminScope,
+			"response_type":         "code",
+			"client_id":             adminClientId,
+			"csrf":                  frt.tokenId,
+			"decision":              "allow",
+			"code_challenge":        codeChallenge,
 			"code_challenge_method": codeChallengeMethod,
 		}).
 		SetCookie(&http.Cookie{
-			Name: frt.cookieName,
+			Name:  frt.cookieName,
 			Value: frt.tokenId,
 		}).
 		Post(authorizeURL)
@@ -314,7 +315,7 @@ func CheckAndSkip2FA(payload []byte) (string, error) {
 func (frt *FRToken) Authenticate(username string, password string) error {
 
 	frt.GetCookieName()
-	
+
 	client := resty.New()
 	// client.SetDebug(true)
 	// realm for authentication is always "/"

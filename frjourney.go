@@ -420,28 +420,31 @@ func DescribeTree(journeyMap map[string]interface{}) map[string]interface{} {
 		}
 		// log.Printf("nodeType = %s\n", nodeType)
 	}
-	for nodeId := range journeyMap["innernodes"].(map[string]interface{}) {
-		// log.Printf("nodeId = %s\n", nodeId)
-		nodeType := journeyMap["innernodes"].(map[string]interface{})[nodeId].(map[string]interface{})["_type"].(map[string]interface{})["_id"]
-		_, exists := nodeTypeMap[nodeType.(string)]
-		if exists {
-			nodeTypeMap[nodeType.(string)] += 1
-		} else {
-			nodeTypeMap[nodeType.(string)] = 1
-		}
-		// log.Printf("nodeType = %s\n", nodeType)
-	}
+	if journeyMap["innernodes"] != nil {
+        for nodeId := range journeyMap["innernodes"].(map[string]interface{}) {
+            // log.Printf("nodeId = %s\n", nodeId)
+            nodeType := journeyMap["innernodes"].(map[string]interface{})[nodeId].(map[string]interface{})["_type"].(map[string]interface{})["_id"]
+            _, exists := nodeTypeMap[nodeType.(string)]
+            if exists {
+                nodeTypeMap[nodeType.(string)] += 1
+            } else {
+                nodeTypeMap[nodeType.(string)] = 1
+            }
+            // log.Printf("nodeType = %s\n", nodeType)
+        }
+    }
 
 	// log.Printf("nodeTypeMap: %q\n", nodeTypeMap)
-
-	for scriptId := range journeyMap["scripts"].(map[string]interface{}) {
-		description := journeyMap["scripts"].(map[string]interface{})[scriptId].(map[string]interface{})["description"]
-		if description == nil {
-			description = ""
-		}
-		scriptMap[journeyMap["scripts"].(map[string]interface{})[scriptId].(map[string]interface{})["name"].(string)] =
-			description.(string)
-	}
+    if journeyMap["scripts"] != nil {
+        for scriptId := range journeyMap["scripts"].(map[string]interface{}) {
+            description := journeyMap["scripts"].(map[string]interface{})[scriptId].(map[string]interface{})["description"]
+            if description == nil {
+                description = ""
+            }
+            scriptMap[journeyMap["scripts"].(map[string]interface{})[scriptId].(map[string]interface{})["name"].(string)] =
+                description.(string)
+        }
+    }
 	// log.Printf("scriptMap: %q\n", scriptMap)
 	treeMap["treeName"] = treeName
 	treeMap["nodeTypes"] = nodeTypeMap
